@@ -25,12 +25,14 @@ export default function Page() {
         try {
             const response = await axios.get(`${config.apiUrl}/api/device/list`);
             setDevices(response.data);
-        } catch (error:any) {
-            Swal.fire({
-                icon: 'error',
-                title: 'ผิดพลาด',
-                text: error.message
-            });
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ผิดพลาด',
+                    text: error.message
+                });
+            }
         }
     }
     const handleShowModal = () => {
@@ -63,12 +65,14 @@ export default function Page() {
             setRemark('');
             setId(0);
             fetchData();
-       } catch (error:any) {
-            Swal.fire({
-                icon: 'error',
-                title: 'ผิดพลาด',
-                text: error.message,
-            });
+       } catch (error: unknown) {
+            if (error instanceof Error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ผิดพลาด',
+                    text: error.message,
+                });
+            }
        }
     }
 
@@ -90,12 +94,14 @@ export default function Page() {
                 await axios.delete(config.apiUrl + '/api/device/remove/' + id);
                 fetchData();
             }
-        } catch (error:any) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.message
-            });
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message
+                });
+            }
         }
     }
 
