@@ -15,21 +15,39 @@ export default function UserPage() {
     const [password, setPassword ] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [level, setLevel] = useState('admin');
-    const [departments, setDepartments] = useState([]);
-    const [sections, setSections] = useState([]);
-    const [sectionId,setSectionId] = useState('');
-    const [departmentId,setDepartmentId] = useState('');
+    const [departments, setDepartments] = useState<any[]>([]);
+    const [sections, setSections] = useState<any[]>([]);
+    const [sectionId,setSectionId] = useState<string>('');
+    const [departmentId,setDepartmentId] = useState<string>('');
 
     useEffect(() => {
-        fetchUsers();
-        fetchDepartments();
+        const initializeData = async () => {
+            await fetchUsers();
+            await fetchDepartments();
+        };
+        initializeData();
     }, []);
 
     const fetchDepartments = async () => {
-        const response = await axios.get(`${config.apiUrl}/api/department/list`);
-        setDepartments(response.data);
-        setDepartmentId(response.data[0].id);
-        fetchSections(response.data[0].id);
+        try {
+            const response = await axios.get(`${config.apiUrl}/api/department/list`).catch((error) => {
+                console.log('API URL:', config.apiUrl);
+                throw error;
+            });
+            
+            if (response?.data?.length > 0) {
+                setDepartments(response.data);
+                setDepartmentId(response.data[0].id);
+                await fetchSections(response.data[0].id);
+            }
+        } catch (error) {
+            console.error('Error fetching departments:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'ไม่สามารถโหลดข้อมูลแผนกได้',
+                text: 'กรุณาตรวจสอบการเชื่อมต่อกับ API'
+            });
+        }
     }
     const fetchSections = async (departmentId: string) => {
         const response = await axios.get(`${config.apiUrl}/api/section/listByDepartment/${departmentId}`);
@@ -70,7 +88,7 @@ export default function UserPage() {
                 username: username,
                 password: password,
                 level: level,
-                sectionId: sectionId
+                sectionId: parseInt(sectionId + "" ),
             }
 
             if (id == '') {
@@ -95,13 +113,21 @@ export default function UserPage() {
         }
     }
 
-    const handleEdit = (user: any) => {
+    const handleEdit = async (user: any) => {
         setId(user.id);
         setUsername(user.username);
         setPassword('');
         setConfirmPassword('');
         setLevel(user.level);
         setShowModal(true);
+
+        const selectedDepartmentId = user?.section?.department?.id ?? (departments[0] as any).id;
+        setDepartmentId(selectedDepartmentId);
+
+        await fetchSections(selectedDepartmentId);
+
+        const sectionId = user?.section?.id;
+        setSectionId(sectionId);
     }
     const handleDelete = async (id: string) => {
         try {
@@ -133,6 +159,8 @@ export default function UserPage() {
                         <tr>
                             <th>Username</th>
                             <th style={{width: '100px'}}>Level</th>
+                            <th>แผนก</th>
+                            <th>ฝ่าย</th>
                             <th className="text-center" style={{width: '220px'}}></th>
                         </tr>
                     </thead>
@@ -141,7 +169,9 @@ export default function UserPage() {
                             <tr key={user.id}>
                                 <td>{user.username}</td>
                                 <td>{user.level}</td>
-                                <td className="text-center">
+                                <td>{user?.section?.department?.name}</td>
+                                <td>{user?.section?.name}</td>
+                                <td className="text-center "style={{width: '220px'}}>
                                     <button className="btn-edit" onClick={()=>handleEdit(user)}>
                                         <i className="fa-solid fa-edit mr-2"></i>
                                     </button>
